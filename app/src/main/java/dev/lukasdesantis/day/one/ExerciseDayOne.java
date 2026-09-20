@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,6 +17,54 @@ import java.util.stream.Stream;
  */
 public class ExerciseDayOne {
   private static final Pattern NUMERIC_VALUE_PATTERN = Pattern.compile("\\d+");
+  private static final Map<String, String> NUMERIC_LOOKUP_TABLE = new LinkedHashMap<>(){{
+    put("one", "1");
+    put("two", "2");
+    put("three", "3");
+    put("four", "4");
+    put("five", "5");
+    put("six", "6");
+    put("seven", "7");
+    put("eight", "8");
+    put("nine", "9");
+  }};
+
+  private ExerciseDayOne() {
+    throw new UnsupportedOperationException("Utility Class");
+  }
+
+  /**
+   * Replace occurences of numeric strings with numeric literals. e.g. one becomes 1 etc.
+   * This method also handles string overlaps. e.g. eightwo becomes 82.
+   *
+   * @param input Input string containing numeric string representations.
+   * @return String containing numeric literals based on string representations of those numbers.
+   */
+  private static String replaceNumericStringsWithNumericLiterals(String input) {
+    
+    Map<Integer, String> indexMap = new TreeMap<>();
+
+    String newInput = input;
+    for (Map.Entry<String, String> entry : NUMERIC_LOOKUP_TABLE.entrySet()) {
+      int indexOfKey = 0;
+
+      while(indexOfKey != -1) {
+        indexOfKey = newInput.indexOf(entry.getKey(), indexOfKey);
+        if (indexOfKey != -1) {
+          indexMap.put(indexOfKey, entry.getKey());
+          indexOfKey += 1;
+        }
+      }
+    }
+
+    int indexOffset = 0;
+    for (Map.Entry<Integer, String> entry : indexMap.entrySet()) {
+      newInput = new StringBuilder(newInput).insert(entry.getKey() + indexOffset, NUMERIC_LOOKUP_TABLE.get(entry.getValue())).toString();
+      indexOffset += 1;
+    }
+
+    return newInput;
+  }
 
   /**
    * Parse numeric literals from input string.
@@ -61,11 +112,12 @@ public class ExerciseDayOne {
    * @return Total of coordinates extracted from text file.
    */
   public static int calculateTotalOfCoordinates() throws IOException, URISyntaxException {
-    try (Stream<String> lines = Files.lines(Paths.get(ClassLoader.getSystemResource("exercise-one-actual-input.txt").toURI()))) {
+    try (Stream<String> lines = Files.lines(Paths.get(ClassLoader.getSystemResource("exercise-two-actual-input.txt").toURI()))) {
       AtomicInteger totalOfCoordinates = new AtomicInteger(0);
     
       lines.forEach(line -> {
-        String numericLiteralsFromLine = parseNumericLiteralsFromInput(line);
+        String parsedNumericLiterals = replaceNumericStringsWithNumericLiterals(line);
+        String numericLiteralsFromLine = parseNumericLiteralsFromInput(parsedNumericLiterals);
         int coordinate = getFirstAndLastNumericLiteralFromInput(numericLiteralsFromLine.split(""));
         totalOfCoordinates.addAndGet(coordinate);
       });
